@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from app.services.scheduler import start_scheduler, shutdown_scheduler
 from app.routers.chat import router as chat_router
 from app.routers.pages import router as pages_router
-from app.services.gemini import get_client
+from app.services.openai_client import get_client
 
 load_dotenv()
 
@@ -32,7 +32,12 @@ async def health():
 @app.on_event("startup")
 async def on_startup():
 	# Initialize Gemini client on startup to load API key
-	_ = get_client()
+	try:
+		_ = get_client()
+	except Exception as e:
+		# Don't crash the app on startup if the API key isn't set.
+		# The chat route obtains the client lazily as well.
+		print(f"[startup] OpenAI client not initialized: {e}")
 	start_scheduler(app)
 
 @app.on_event("shutdown")
